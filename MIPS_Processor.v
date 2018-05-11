@@ -46,6 +46,8 @@ module MIPS_Processor
 //******************************************************************/
 //******************************************************************/
 // Data types to connect modules
+
+//ALU CONTROL
 wire BranchNE_wire;
 wire BranchEQ_wire;
 wire RegDst_wire;
@@ -61,11 +63,14 @@ wire MemtoReg_wire;
 wire MemWrite_wire;
 wire Jr_wire;
 wire Jal_wire;
+
+
 wire [2:0] ALUOp_wire;
 wire [3:0] ALUOperation_wire;
 wire [4:0] WriteRegister_wire;
 wire [4:0] MUX_ForRTypeAndIType_wire;
-wire [31:0] MUX_PC_wire; 
+
+//wire [31:0] MUX_PC_wire; 
 wire [31:0]	PC_wire;
 wire [31:0] Instruction_wire;
 wire [31:0] ReadData1_wire;
@@ -76,15 +81,63 @@ wire [31:0] MUX_PC_InmmediateExtend_wire;
 wire [31:0] ReadData2OrInmmediate_wire;
 wire [31:0] ALUResult_wire;
 wire [31:0] PC_4_wire;
+
+
 wire  PCtoBranch_wire;
 wire [31:0] ReadData_wire;
 wire [31:0] MUX_RegisterFile_wire;
 wire [31:0] MUX_WriteData_wire;
-wire [31:0] MUX_Jump_wire;
-wire [63:0] Pipeline_IF_ID;
-wire [150:0] Pipeline_ID_EX;
-wire [107:0] Pipeline_EX_MEM;
-wire [70:0] Pipeline_MEM_WB;
+//wire [31:0] MUX_Jump_wire;
+
+
+
+//Pipeline IF to ID
+wire [31:0]IF_PC_4_wire_ID;
+wire [31:0]IF_Instruction_wire_ID;
+
+
+//Pipeline ID to EX
+wire ID_Jump_wire_EX;//1
+wire ID_RegDst_wire_EX;//1
+wire ID_BranchNE_wire_EX;//1
+wire ID_BramchEQ_wire_EX;//1
+wire [2:0]ID_ALUOp_wire_EX;//3
+wire ID_ALUSrc_wire_EX;//1
+wire ID_RegWrite_wire_EX;//1
+wire ID_MemRead_wire_EX;//1
+wire ID_MemWrite_wire_EX;//1
+wire ID_MemtoReg_wire_EX;//1
+wire ID_Jal_wire_EX;//1
+wire [31:0]ID_PC_4_wire_EX; //32
+wire [31:0]ID_ReadData1_wire_EX; //32
+wire [31:0]ID_ReadData2_wire_EX; //32
+wire [31:0]ID_InmmediateExtend_wire_EX;// 32
+wire [4:0]ID_Rt_wire_EX; //5
+wire [4:0]ID_Rd_wire_EX; //5
+
+
+//Pipeline Ex to to MEM
+wire EX_MemtoReg_wire_MEM;//1
+wire EX_BranchNE_wire_MEM; //1
+wire EX_BramchEQ_wire_MEM;//1
+wire EX_RegWrite_wire_MEM; //1
+wire EX_MemRead_wire_MEM;//1
+wire EX_MemWrite_wire_MEM;//1
+wire [31:0]EX_PC_InmmediateExtend_wire_MEM; //32
+wire EX_Zero_wire_MEM;//1
+wire [31:0]EX_ALUResult_wire_MEM; //32
+wire [31:0]EX_ReadData2_wire_MEM;//32
+wire [4:0]EX_MUX_ForRTypeAndIType_wire_MEM; //5
+
+//Pipeline MEM to WB
+wire MEM_RegWrite_wire_WB;//1
+wire MEM_MemtoReg_wire_WB; //1
+wire [31:0]MEM_ReadData_wire_WB; //32
+wire [31:0]MEM_ALUResult_wire_WB; //32
+wire [4:0]MEM_MUX_ForRTypeAndIType_wire_WB; //5
+					
+					
+
 integer ALUStatus;
 
 
@@ -103,8 +156,12 @@ IF_Pipeline_ID
 	.clk(clk),
 	.reset(reset),
 	.enable(1),
-	.DataInput({PC_4_wire,Instruction_wire}),
-	.DataOutput(Pipeline_IF_ID)
+	.DataInput({
+					PC_4_wire,
+					Instruction_wire}),
+	.DataOutput({
+					IF_PC_4_wire_ID,
+					IF_Instruction_wire_ID})
 );
 
 Pipeline
@@ -117,26 +174,46 @@ ID_Pipeline_EX
 	.reset(reset),
 	.enable(1),
 	.DataInput({
-					Jump_wire,//[150]
-					RegDst_wire,//[149]
-					BranchNE_wire,//[148]
-					BranchEQ_wire,//[147]
-					ALUOp_wire,//[146:144]
-					ALUSrc_wire,//[143]
-					RegWrite_wire,//[142]
-					MemRead_wire,//[141]
-					MemWrite_wire,//[140]
-					MemtoReg_wire,//[139]
-					Jal_wire,//[138]
-					Pipeline_IF_ID[63:32], //PC [137:106]
-					ReadData1_wire, //[105:74]
-					ReadData2_wire, //[73:42]
-					InmmediateExtend_wire, // [41:10]
-					Pipeline_IF_ID[20:16], //instruction [9:5]
-					Pipeline_IF_ID[15:11] //instruction [4:0]
+					Jump_wire,//1
+					RegDst_wire,//1
+					BranchNE_wire,//1
+					BranchEQ_wire,//1
+					ALUOp_wire,//3
+					ALUSrc_wire,//1
+					RegWrite_wire,//1
+					MemRead_wire,//1
+					MemWrite_wire,//1
+					MemtoReg_wire,//1
+					Jal_wire,//1
+					IF_PC_4_wire_ID, //PC 32
+					ReadData1_wire, //32
+					ReadData2_wire, //32
+					InmmediateExtend_wire, // 32
+					IF_Instruction_wire_ID[20:16], //5
+					IF_Instruction_wire_ID[15:11] //5
 					}),
-	.DataOutput(Pipeline_ID_EX)
+	.DataOutput({
+					ID_Jump_wire_EX,
+					ID_RegDst_wire_EX,
+					ID_BranchNE_wire_EX,
+					ID_BramchEQ_wire_EX,
+					ID_ALUOp_wire_EX,//[146:144]
+					ID_ALUSrc_wire_EX,//[143]
+					ID_RegWrite_wire_EX,//[142]
+					ID_MemRead_wire_EX,//[141]
+					ID_MemWrite_wire_EX,//[140]
+					ID_MemtoReg_wire_EX,//[139]
+					ID_Jal_wire_EX,//[138]
+					ID_PC_4_wire_EX, //PC [137:106]
+					ID_ReadData1_wire_EX,//[105:74]
+					ID_ReadData2_wire_EX, //[73:42]
+					ID_InmmediateExtend_wire_EX,// [41:10]
+					ID_Rt_wire_EX, //instruction [9:5]
+					ID_Rd_wire_EX, //instruction [4:0]	
+					})
 );
+
+
 
 Pipeline
 #(
@@ -148,20 +225,33 @@ EX_Pipeline_MEM
 	.reset(reset),
 	.enable(1),
 	.DataInput({
-					Pipeline_ID_EX[139], //MemtoReg [107]
-					Pipeline_ID_EX[148], //BranchNE [106]
-					Pipeline_ID_EX[147], //BranchEQ[105]
-					Pipeline_ID_EX[142], //RegWrite[104]
-					Pipeline_ID_EX[141], //MemRead[103]
-					Pipeline_ID_EX[140], //MemWrite[102]
-					PC_InmmediateExtend_wire, //[ 101:70]
-					Zero_wire,// [69]
-					ALUResult_wire, //[68:37]
-					Pipeline_ID_EX[73:42],//Dato2[36:5]
-					MUX_ForRTypeAndIType_wire //[4:0]
+					ID_MemtoReg_wire_EX, //1
+					ID_BranchNE_wire_EX, //1
+					ID_BramchEQ_wire_EX, //1
+					ID_RegWrite_wire_EX, //1
+					ID_MemRead_wire_EX, //1
+					ID_MemWrite_wire_EX, //1
+					PC_InmmediateExtend_wire, //32
+					Zero_wire,//1
+					ALUResult_wire, //32
+					ID_ReadData2_wire_EX,//32
+					MUX_ForRTypeAndIType_wire //5
 					}),
-	.DataOutput(Pipeline_EX_MEM)
+	.DataOutput({
+					EX_MemtoReg_wire_MEM,//1
+					EX_BranchNE_wire_MEM, //1
+					EX_BramchEQ_wire_MEM,//1
+					EX_RegWrite_wire_MEM, //1
+					EX_MemRead_wire_MEM,//1
+					EX_MemWrite_wire_MEM,//1
+					EX_PC_InmmediateExtend_wire_MEM, //32
+					EX_Zero_wire_MEM,//1
+					EX_ALUResult_wire_MEM, //32
+					EX_ReadData2_wire_MEM,//32
+					EX_MUX_ForRTypeAndIType_wire_MEM //5)
+					})
 );
+
 
 
 Pipeline
@@ -174,13 +264,19 @@ MEM_Pipeline_WB
 	.reset(reset),
 	.enable(1),
 	.DataInput({
-					Pipeline_EX_MEM[104], //RegWrite[70]
-					Pipeline_EX_MEM[107], //MemtoReg[69]
-					ReadData_wire, //data[68:37]
-					Pipeline_EX_MEM[68:37], //aluresult [36:5]
-					Pipeline_EX_MEM[4:0] //writeregister [4:0]
+					EX_RegWrite_wire_MEM, //1
+					EX_MemtoReg_wire_MEM, //1
+					ReadData_wire, //32
+					EX_ALUResult_wire_MEM, //32
+					EX_MUX_ForRTypeAndIType_wire_MEM //5
 					}),
-	.DataOutput(Pipeline_MEM_WB)
+	.DataOutput({
+					MEM_RegWrite_wire_WB,//1
+					MEM_MemtoReg_wire_WB, //1
+					MEM_ReadData_wire_WB, //32
+					MEM_ALUResult_wire_WB, //32
+					MEM_MUX_ForRTypeAndIType_wire_WB//5
+					})
 );
 
 
@@ -188,7 +284,7 @@ Control
 ControlUnit
 (
 	.Jump(Jump_wire),
-	.OP(Pipeline_IF_ID[31:26]),
+	.OP(IF_Instruction_wire_ID[31:26]),
 	.RegDst(RegDst_wire),
 	.BranchNE(BranchNE_wire),
 	.BranchEQ(BranchEQ_wire),
@@ -247,9 +343,9 @@ Multiplexer2to1
 )
 MUX_ForRTypeAndIType
 (
-	.Selector(Pipeline_ID_EX[149]),
-	.MUX_Data0(Pipeline_ID_EX[20:16]),
-	.MUX_Data1(Pipeline_ID_EX[15:11]),
+	.Selector(ID_RegDst_wire_EX),
+	.MUX_Data0(ID_Rt_wire_EX),
+	.MUX_Data1(ID_Rd_wire_EX),
 	.MUX_Output(MUX_ForRTypeAndIType_wire)
 
 );
@@ -286,20 +382,21 @@ Register_File
 (
 	.clk(clk),
 	.reset(reset),
-	.RegWrite(Pipeline_MEM_WB[70] ),
-	.WriteRegister( Pipeline_MEM_WB[4:0]),
-	.ReadRegister1(Pipeline_IF_ID[25:21]),
-	.ReadRegister2(Pipeline_IF_ID[20:16]),
+	.RegWrite(MEM_RegWrite_wire_WB),
+	.WriteRegister(EX_MUX_ForRTypeAndIType_wire_MEM),
+	.ReadRegister1(IF_Instruction_wire_ID[25:21]),
+	.ReadRegister2(IF_Instruction_wire_ID[20:16]),
 	.WriteData(MUX_WriteData_wire),
 	.ReadData1(ReadData1_wire),
 	.ReadData2(ReadData2_wire)
 
 );
 
+
 SignExtend
 SignExtendForConstants
 (   
-	.DataInput(Pipeline_IF_ID[15:0]),
+	.DataInput(IF_Instruction_wire_ID[15:0]),
    .SignExtendOutput(InmmediateExtend_wire)
 );
 
@@ -311,9 +408,9 @@ Multiplexer2to1
 )
 MUX_ForReadDataAndInmediate
 (
-	.Selector(Pipeline_ID_EX[143]),
-	.MUX_Data0(Pipeline_ID_EX[73:42]),
-	.MUX_Data1(Pipeline_ID_EX[41:10]),
+	.Selector(ID_ALUSrc_wire_EX),
+	.MUX_Data0(ID_ReadData2_wire_EX),
+	.MUX_Data1(ID_InmmediateExtend_wire_EX),
 	
 	.MUX_Output(ReadData2OrInmmediate_wire)
 
@@ -340,8 +437,8 @@ MUX_ForReadDataAndInmediate
 ALUControl
 ArithmeticLogicUnitControl
 (
-	.ALUOp(Pipeline_ID_EX[146:144]),
-	.ALUFunction(Pipeline_ID_EX[15:10]),
+	.ALUOp(ID_ALUOp_wire_EX),
+	.ALUFunction(ID_InmmediateExtend_wire_EX[5:0]),
 	.ALUOperation(ALUOperation_wire),
 	.Jr(Jr_wire)
 
@@ -353,19 +450,18 @@ ALU
 ArithmeticLogicUnit 
 (
 	.ALUOperation(ALUOperation_wire),
-	.A(Pipeline_ID_EX[105:74]),
+	.A(ID_ReadData1_wire_EX),
 	.B(ReadData2OrInmmediate_wire),
 	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire),
-	.Shamt(Pipeline_ID_EX[14:10])
+	.Shamt(ID_InmmediateExtend_wire_EX[10:6])
 );
 
 Adder32bits
 PC_Puls_InmmediateExtend_wire
 (
-	.Data0(Pipeline_ID_EX[137:106]),
-	.Data1({Pipeline_ID_EX[39:10],2'b00}),
-	
+	.Data0(ID_PC_4_wire_EX),
+	.Data1({ID_InmmediateExtend_wire_EX[29:0],2'b00}),
 	.Result(PC_InmmediateExtend_wire)
 );
 
@@ -379,7 +475,7 @@ MUX_ForAddress
 (
 	.Selector(PCtoBranch_wire),
 	.MUX_Data0(PC_4_wire),
-	.MUX_Data1(Pipeline_EX_MEM[101:70]),
+	.MUX_Data1(EX_PC_InmmediateExtend_wire_MEM),
 	.MUX_Output(MUX_PC_wire)
 );
 
@@ -399,13 +495,14 @@ MUX_ForAddress
 DataMemory
 RAM_Memory
 (
-	.WriteData(Pipeline_EX_MEM[36:5]),
-	.Address(Pipeline_EX_MEM[68:37]),
-	.MemWrite(Pipeline_EX_MEM[102]),
-	.MemRead(Pipeline_EX_MEM[103]),
+	.WriteData(EX_ReadData2_wire_MEM),
+	.Address(EX_ALUResult_wire_MEM),
+	.MemWrite(EX_MemWrite_wire_MEM),
+	.MemRead(EX_MemRead_wire_MEM),
 	.clk(clk),
 	.ReadData(ReadData_wire)
 );
+
 	
 Multiplexer2to1
 #(
@@ -413,16 +510,16 @@ Multiplexer2to1
 )
 MUX_WriteData
 (
-	.Selector(Pipeline_EX_MEM[69]),
-	.MUX_Data0(Pipeline_EX_MEM[36:5]),
-	.MUX_Data1(Pipeline_EX_MEM[68:37]),
+	.Selector(MEM_MemtoReg_wire_WB),
+	.MUX_Data0(MEM_ReadData_wire_WB),
+	.MUX_Data1(MEM_ALUResult_wire_WB),
 	.MUX_Output(MUX_WriteData_wire)
 );
 
 
 
 assign ALUResultOut = ALUResult_wire;
-assign PCtoBranch_wire = (Pipeline_EX_MEM[69] & Pipeline_EX_MEM[105]) | (~Pipeline_EX_MEM[69] & Pipeline_EX_MEM[106]);
+assign PCtoBranch_wire = (EX_Zero_wire_MEM & EX_BramchEQ_wire_MEM) | (~EX_Zero_wire_MEM & EX_BranchNE_wire_MEM);
 assign  PortOut = PC_wire;
 endmodule
 
