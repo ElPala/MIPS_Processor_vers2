@@ -66,10 +66,11 @@ wire PCtoBranch_wire;
 wire Jump_wire;
 wire Jr_wire; 
 wire Jal_wire;
-
 wire [2:0] 	ALUOp_wire;
 wire [3:0] 	ALUOperation_wire;
 wire [4:0] 	WriteRegister_wire;
+wire [1:0]	ForwardA_wire;
+wire [1:0]	ForwardB_wire;
 wire [31:0] ReadData1_wire;
 wire [31:0] ReadData2_wire;
 wire [31:0] InmmediateExtend_wire;
@@ -87,6 +88,8 @@ wire [31:0] MUX_FinalWriteData_wire;
 wire [4:0] 	MUX_WriteRegister_wire;
 wire [31:0] MUX_Jump_wire;
 wire [31:0] MUX_Jr_wire;
+wire [31:0] MUX_Output_A_wire;
+wire [31:0] MUX_Output_B_wire;
 
 
 //Pipeline IF to ID
@@ -213,7 +216,7 @@ EX_Pipeline_MEM
 					PC_InmmediateExtend_wire,
 					Zero_wire,
 					ALUResult_wire,
-					ID_ReadData2_wire_EX,
+					MUX_Output_B_wire,
 					MUX_WriteRegister_wire
 					}),
 	.DataOutput({
@@ -361,7 +364,7 @@ Multiplexer2to1
 MUX_ForReadDataAndInmediate
 (
 	.Selector(ID_ALUSrc_wire_EX),
-	.MUX_Data0(ID_ReadData2_wire_EX),
+	.MUX_Data0(MUX_Output_B_wire),
 	.MUX_Data1(ID_InmmediateExtend_wire_EX),
 	.MUX_Output(ReadData2OrInmmediate_wire)
 
@@ -382,7 +385,7 @@ ALU
 ArithmeticLogicUnit 
 (
 	.ALUOperation(ALUOperation_wire),
-	.A(ID_ReadData1_wire_EX),
+	.A(MUX_Output_A_wire),
 	.B(ReadData2OrInmmediate_wire),
 	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire),
@@ -503,6 +506,58 @@ MUX_Left_to_PC
 	
 	.MUX_Output(MUX_FinalPC_wire)
 );
+
+//Cambiar wire
+//Add multiplexor 			
+
+ForwardUnit
+#(
+	.N(5)
+)
+ForwardingUnit
+(
+	.ID_RegisterRs_wire_EX(IF_Instruction_wire_ID[25:21]),
+	.ID_RegisterRt_wire_EX(IF_Instruction_wire_ID[20:16]),
+	.EX_RegisterRd_wire_MEM(EX_MUX_ForRTypeAndIType_wire_MEM),
+	.EX_RegWrite_wire_MEM(EX_RegWrite_wire_MEM),
+	.MEM_RegisterRd_wire_WB(MEM_MUX_ForRTypeAndIType_wire_WB),
+	.MEM_RegWrite_wire_WB(MEM_RegWrite_wire_WB),
+	.ForwardA(ForwardA_wire),
+	.ForwardB(ForwardB_wire)
+);
+
+
+
+Multiplexer3to1
+#(
+	.NBits(32)
+)
+MUX_ForA
+(
+	.Selector(ForwardA_wire),
+	.MUX_Data0(ID_ReadData1_wire_EX),
+	.MUX_Data1(MUX_FinalWriteData_wire),
+	.MUX_Data2(EX_ALUResult_wire_MEM),
+	
+	.MUX_Output(MUX_Output_A_wire)
+);
+
+
+Multiplexer3to1
+#(
+	.NBits(32)
+)
+MUX_ForB
+(
+	.Selector(ForwardB_wire),
+	.MUX_Data0(ID_ReadData2_wire_EX),
+	.MUX_Data1(MUX_FinalWriteData_wire),
+	.MUX_Data2(EX_ALUResult_wire_MEM),
+	
+	.MUX_Output(MUX_Output_B_wire)
+);
+
+
 
 
 assign PCtoBranch_wire = (Zero_wire & BranchEQ_wire ) | (BranchNE_wire &  ~Zero_wire);
