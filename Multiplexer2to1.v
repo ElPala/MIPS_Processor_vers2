@@ -12,14 +12,14 @@
 
 module Multiplexer2to1
 #(
-	parameter NBits=32
+	parameter N=32
 )
 (
 	input Selector,
-	input [NBits-1:0] MUX_Data0,
-	input [NBits-1:0] MUX_Data1,
+	input [N-1:0] MUX_Data0,
+	input [N-1:0] MUX_Data1,
 	
-	output reg [NBits-1:0] MUX_Output
+	output reg [N-1:0] MUX_Output
 
 );
 

@@ -2,14 +2,14 @@
 module Multiplexer3to1
 #
 (
-	parameter NBits=32
+	parameter N=32
 )
 (
 	input [1:0] Selector,
-	input [NBits-1:0] MUX_Data0,
-	input [NBits-1:0] MUX_Data1,
-	input [NBits-1:0] MUX_Data2,
-	output reg [NBits-1:0] MUX_Output
+	input [N-1:0] MUX_Data0,
+	input [N-1:0] MUX_Data1,
+	input [N-1:0] MUX_Data2,
+	output reg [N-1:0] MUX_Output
 );
 
 	always@(Selector,MUX_Data0,MUX_Data1,MUX_Data2)
