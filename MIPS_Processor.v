@@ -516,8 +516,8 @@ ForwardUnit
 )
 ForwardingUnit
 (
-	.ID_RegisterRs_wire_EX(IF_Instruction_wire_ID[25:21]),
-	.ID_RegisterRt_wire_EX(IF_Instruction_wire_ID[20:16]),
+	.ID_RegisterRs_wire_EX(ID_Instruction_wire_Ex[25:21]),
+	.ID_RegisterRt_wire_EX(ID_Instruction_wire_Ex[20:16]),
 	.EX_RegisterRd_wire_MEM(EX_MUX_ForRTypeAndIType_wire_MEM),
 	.EX_RegWrite_wire_MEM(EX_RegWrite_wire_MEM),
 	.MEM_RegisterRd_wire_WB(MEM_MUX_ForRTypeAndIType_wire_WB),

@@ -1,0 +1,44 @@
+module ForwardUnit
+#
+(
+	parameter BusWidth=32
+)
+(
+	input [BusWidth-1:0] EXMEM_RegisterRd,
+	input [BusWidth-1:0] IDEX_RegisterRs,
+	input [BusWidth-1:0] IDEX_RegisterRt,
+	input EXMEM_RegWrite,
+	
+	input [BusWidth-1:0] MEMWB_RegisterRd,
+	input MEMWB_RegWrite,
+	input isR,
+	
+	output reg [1:0] ForwardA,
+	output reg [1:0] ForwardB
+);
+
+	always@(EXMEM_RegisterRd,IDEX_RegisterRs,IDEX_RegisterRt,MEMWB_RegisterRd,MEMWB_RegWrite)
+		begin                     
+			if( (EXMEM_RegWrite) && (EXMEM_RegisterRd != 0) && (EXMEM_RegisterRd == IDEX_RegisterRs) )
+				ForwardA <= 2'b10;
+			else
+			begin
+			if( MEMWB_RegWrite && MEMWB_RegisterRd != 0 && EXMEM_RegisterRd != IDEX_RegisterRs && MEMWB_RegisterRd == IDEX_RegisterRs )
+				ForwardA <= 2'b01;
+			else
+				ForwardA <= 2'b00;
+			end
+	
+			if( (EXMEM_RegWrite) && (EXMEM_RegisterRd != 0) && (EXMEM_RegisterRd == IDEX_RegisterRt) && isR )
+				ForwardB <= 2'b10;
+			else
+			begin
+			if( (MEMWB_RegWrite) && (MEMWB_RegisterRd != 0) && (EXMEM_RegisterRd != IDEX_RegisterRt) && (MEMWB_RegisterRd == IDEX_RegisterRt)  )
+				ForwardB <= 2'b01;
+			else
+				ForwardB <= 2'b00;
+			end
+	end
+
+
+endmodule
