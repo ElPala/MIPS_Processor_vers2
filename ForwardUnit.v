@@ -25,28 +25,27 @@ module ForwardUnit
 		if(EX_RegWrite_wire_MEM &&
 		EX_RegisterRd_wire_MEM != 0 &&
 		EX_RegisterRd_wire_MEM == ID_RegisterRs_wire_EX)
-			ForwardA = 2'b10; // Se lee el dato desde la salida de la ALU porque hay una dependencia en el registro Rs en la siguiente instruccion
+			ForwardA = 2'b10; 
 		else
 			if(MEM_RegWrite_wire_WB &&
 			MEM_RegisterRd_wire_WB != 0 &&
 			EX_RegisterRd_wire_MEM != ID_RegisterRs_wire_EX &&
 			MEM_RegisterRd_wire_WB == ID_RegisterRs_wire_EX)
-				ForwardA = 2'b01; // Se lee el dato desde la salida de Data Memory porque existe una dependencia  en el registro Rs dos instrucciones adelante
+				ForwardA = 2'b01; 
 			else
-				ForwardA = 2'b00; // No existe ninguna dependencia
-		
+				ForwardA = 2'b00; 
 		if(EX_RegWrite_wire_MEM &&
 		EX_RegisterRd_wire_MEM != 0 &&
 		EX_RegisterRd_wire_MEM == ID_RegisterRt_wire_EX)
-			ForwardB = 2'b10; // Se lee el dato desde la salida de la ALU porque hay una dependencia en el registro Rt en la siguiente instruccion
+			ForwardB = 2'b10; 
 		else
 			if(MEM_RegWrite_wire_WB &&
 			MEM_RegisterRd_wire_WB != 0 &&
 			EX_RegisterRd_wire_MEM != ID_RegisterRt_wire_EX &&
 			MEM_RegisterRd_wire_WB == ID_RegisterRt_wire_EX)
-				ForwardB = 2'b01; // Se lee el dato desde la salida de Data Memory porque existe una dependencia  en el registro Rt dos instrucciones adelante
+				ForwardB = 2'b01;
 			else
-				ForwardB = 2'b00; // No existe ninguna dependencia
+				ForwardB = 2'b00;
 			
 	end
 

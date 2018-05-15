@@ -81,16 +81,16 @@ wire Flush_RegWrite_wire;
 wire Flush_MemWrite_wire;					
 wire Flush_MemRead_wire;				
 wire Flush_MemToReg_wire;
-
+wire Flush_Jal_wire;
 wire ID_Flush_BranchNE_wire_EX;//added
 wire ID_Flush_BramchEQ_wire_EX;//added
-wire Jr_Flush_Jr_wire;//added
+wire Flush_Jr_wire;//added
 wire ID_Flush_Jump_wire_EX;//added
 wire ID_Flush_RegWrite_wire_EX;
 wire ID_Flush_MemWrite_wire_EX;
 wire ID_Flush_MemRead_wire_EX;	
 wire ID_Flush_MemtoReg_wire_EX;
-		
+wire ID_Flush_Jal_wire_EX;
 wire [2:0] 	ALUOp_wire;
 wire [3:0] 	ALUOperation_wire;
 wire [4:0] 	WriteRegister_wire;
@@ -139,8 +139,9 @@ wire [31:0] ID_ReadData1_wire_EX;
 wire [31:0] ID_ReadData2_wire_EX;
 wire [31:0] ID_Instruction_wire_Ex;
 wire [31:0] ID_InmmediateExtend_wire_EX;
-
 //Pipeline Ex to to MEM
+
+wire EX_Jal_wire_MEM;//1
 wire EX_Jr_wire_MEM;
 wire EX_Jump_wire_MEM;
 wire EX_BranchNE_wire_MEM; //1
@@ -153,14 +154,16 @@ wire [4:0] 	EX_MUX_ForRTypeAndIType_wire_MEM;
 wire [31:0]	EX_PC_InmmediateExtend_wire_MEM;			
 wire [31:0] EX_ALUResult_wire_MEM;			
 wire [31:0] EX_ReadData2_wire_MEM;			
-
+wire [31:0] EX_PC_4_wire_MEM;
+wire [31:0] EX_ReadData1_wire_MEM;
 //Pipeline MEM to WB
+wire MEM_Jal_wire_WB;//1
 wire MEM_RegWrite_wire_WB;
 wire MEM_MemtoReg_wire_WB;		
 wire [4:0]  MEM_MUX_ForRTypeAndIType_wire_WB;  
 wire [31:0] MEM_ReadData_wire_WB;
 wire [31:0] MEM_ALUResult_wire_WB; 		
-
+wire [31:0] MEM_PC_4_wire_WB;
 
 //******************************************************************/
 //******************************************************************/
@@ -189,7 +192,7 @@ IF_Pipeline_ID
 
 Pipeline
 #(
-	.N(171)
+	.N(172)
 )
 ID_Pipeline_EX
 (
@@ -197,6 +200,7 @@ ID_Pipeline_EX
 	.reset(reset),
 	.enable(1),
 	.DataInput({
+					Flush_Jal_wire,
 					Flush_Jump_wire, //added
 					Flush_BranchNE_wire,
 					Flush_BranchEQ_wire,
@@ -206,7 +210,7 @@ ID_Pipeline_EX
 					Flush_RegWrite_wire,					
 					Flush_MemWrite_wire,					
 					Flush_MemRead_wire,					
-					Flush_MemToReg_wire,					
+					Flush_MemToReg_wire,
 					IF_PC_4_wire_ID, 				 
 					ReadData1_wire,				
 					ReadData2_wire,				
@@ -214,6 +218,7 @@ ID_Pipeline_EX
 					IF_Instruction_wire_ID		
 					}),
 	.DataOutput({
+					ID_Jal_wire_EX,
 					ID_Jump_wire_EX,//1
 					ID_BranchNE_wire_EX,//1
 					ID_BramchEQ_wire_EX,
@@ -235,7 +240,7 @@ ID_Pipeline_EX
 
 Pipeline
 #(
-	.N(110)
+	.N(143)
 )
 EX_Pipeline_MEM
 (
@@ -243,21 +248,26 @@ EX_Pipeline_MEM
 	.reset(reset),
 	.enable(1),
 	.DataInput({
+					ID_ReadData1_wire_EX,
+					ID_Flush_Jal_wire_EX,
+					ID_PC_4_wire_EX,
 					ID_Flush_BranchNE_wire_EX,//added
 					ID_Flush_BramchEQ_wire_EX,//added
-					Jr_Flush_Jr_wire,//added
+					Flush_Jr_wire,//added
 					ID_Flush_Jump_wire_EX,//added
 					ID_Flush_RegWrite_wire_EX,
 					ID_Flush_MemWrite_wire_EX,
 					ID_Flush_MemRead_wire_EX,	
 					ID_Flush_MemtoReg_wire_EX,
 					Zero_wire,
-					PC_InmmediateExtend_wire,
 					ALUResult_wire,
 					MUX_Output_B_wire,
-					MUX_WriteRegister_wire
+					WriteRegister_wire
 					}),
 	.DataOutput({
+					EX_ReadData1_wire_MEM,
+					EX_Jal_wire_MEM,
+					EX_PC_4_wire_MEM,
 					EX_BranchNE_wire_MEM, //1
 					EX_BramchEQ_wire_MEM,//1
 					EX_Jr_wire_MEM,
@@ -267,7 +277,6 @@ EX_Pipeline_MEM
 					EX_MemRead_wire_MEM,	
 					EX_MemtoReg_wire_MEM,
 					EX_Zero_wire_MEM,
-					EX_PC_InmmediateExtend_wire_MEM,
 					EX_ALUResult_wire_MEM,
 					EX_ReadData2_wire_MEM,
 					EX_MUX_ForRTypeAndIType_wire_MEM	
@@ -276,7 +285,7 @@ EX_Pipeline_MEM
 
 Pipeline
 	#(
-		.N(71)
+		.N(104)
 	)
 MEM_Pipeline_WB
 (
@@ -284,6 +293,8 @@ MEM_Pipeline_WB
 		.reset(reset),
 		.enable(1),
 		.DataInput({
+					EX_Jal_wire_MEM,
+					EX_PC_4_wire_MEM,
 					EX_RegWrite_wire_MEM,	
 					EX_MemtoReg_wire_MEM,	
 					ReadDataOut_wire,			
@@ -291,6 +302,8 @@ MEM_Pipeline_WB
 					EX_MUX_ForRTypeAndIType_wire_MEM  
 					}),
 		.DataOutput({
+					MEM_Jal_wire_WB,
+					MEM_PC_4_wire_WB,
 					MEM_RegWrite_wire_WB,	
 					MEM_MemtoReg_wire_WB,	
 					MEM_ReadData_wire_WB,	
@@ -469,19 +482,7 @@ AdderPC
 	
 	.Result(PC_InmmediateExtend_wire)
 );
-//
-//Multiplexer2to1
-//#(
-//	.N(32)
-//)
-//MUX_ForAddress
-//(
-//	.Selector(PCtoBranch_wire),
-//	.MUX_Data0(PC_4_wire),
-//	.MUX_Data1(InmmediateExtend_wire),
-//	
-//	.MUX_Output(Jump_PC_wire)
-//);
+
 
 Multiplexer2to1
 #(
@@ -489,9 +490,9 @@ Multiplexer2to1
 )
 MUX_To_Jump	
 (
-	.Selector(Jump_wire),
+	.Selector(ID_Jump_wire_EX),
 	.MUX_Data0(Jump_PC_wire),
-	.MUX_Data1({ PC_4_wire[31:28],  InmmediateExtend_wire[25:0],2'b00}),
+	.MUX_Data1({ID_PC_4_wire_EX[31:28],  PC_InmmediateExtend_wire[25:0],2'b00}),
 	
 	.MUX_Output(MUX_Jump_wire)
 );
@@ -502,11 +503,11 @@ Multiplexer2to1
 )
 MUX_Jr		
 (
-	.Selector(Jr_wire),
+	.Selector(EX_Jr_wire_MEM),
 	.MUX_Data0(MUX_Jump_wire),
-	.MUX_Data1(ReadData1_wire),
+	.MUX_Data1(EX_ReadData1_wire_MEM),
 	
-	.MUX_Output(MUX_Jr_wire)
+	.MUX_Output(MUX_FinalPC_wire)
 );
 
 Multiplexer2to1
@@ -515,7 +516,7 @@ Multiplexer2to1
 )
 MUX_Jal		
 (
-	.Selector(Jal_wire),
+	.Selector(ID_Jal_wire_EX),
 	.MUX_Data0(MUX_WriteRegister_wire ),
 	.MUX_Data1({5'b11111}),
 	.MUX_Output(WriteRegister_wire)
@@ -527,10 +528,9 @@ Multiplexer2to1
 )
 MUX2_Jal		
 (
-	.Selector(Jal_wire),
+	.Selector(MEM_Jal_wire_WB),
 	.MUX_Data0(MUX_WriteData_wire),
-	.MUX_Data1(PC_4_wire),
-	
+	.MUX_Data1(MEM_PC_4_wire_WB),
 	.MUX_Output(MUX_FinalWriteData_wire)
 );
 
@@ -545,8 +545,7 @@ MUX_Left_to_PC
 	.Selector(PCtoBranch_wire),
 	.MUX_Data0(PC_4_wire),
 	.MUX_Data1(EX_ALUResult_wire_MEM),
-	
-	.MUX_Output(MUX_FinalPC_wire)
+	.MUX_Output(Jump_PC_wire)
 );
 
 //Cambiar wire
@@ -651,6 +650,7 @@ MUX_ID_Flush_EX
 (
 	.Selector(Flush_wire | PCtoBranch_wire | EX_Jump_wire_MEM | EX_Jr_wire_MEM),
 	.MUX_Data0({
+					Jal_wire,
 					Jump_wire, //1
 					BranchNE_wire,//1
 					BranchEQ_wire,//1
@@ -664,6 +664,7 @@ MUX_ID_Flush_EX
 	}),
 	.MUX_Data1(0),
 	.MUX_Output({
+					Flush_Jal_wire,
 					Flush_Jump_wire, //added
 					Flush_BranchNE_wire,
 					Flush_BranchEQ_wire,
@@ -688,6 +689,7 @@ MUX_EX_Flush_MEM
 	.Selector(PCtoBranch_wire | EX_Jump_wire_MEM | EX_Jr_wire_MEM),
 	.MUX_Data0(
 				{
+				ID_Jal_wire_EX,
 				ID_BranchNE_wire_EX,//added
 				ID_BramchEQ_wire_EX,//added
 				Jr_wire,//added
@@ -700,9 +702,10 @@ MUX_EX_Flush_MEM
 	.MUX_Data1(0),
 	
 	.MUX_Output({
+					ID_Flush_Jal_wire_EX,
 					ID_Flush_BranchNE_wire_EX,//added
 					ID_Flush_BramchEQ_wire_EX,//added
-					Jr_Flush_Jr_wire,//added
+					Flush_Jr_wire,//added
 					ID_Flush_Jump_wire_EX,//added
 					ID_Flush_RegWrite_wire_EX,
 					ID_Flush_MemWrite_wire_EX,
